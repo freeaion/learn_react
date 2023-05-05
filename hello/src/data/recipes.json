@@ -1,0 +1,26 @@
+[
+    {
+        "name": "Baked Salmon",
+        "ingredients": [
+            { "name": "Salmon", "amount": 1, "measurement": "lb" },
+            { "name": "Pine Nuts", "amount": 1, "measurement": "cup" }
+        ],
+        "steps" : [
+            "Preheat",
+            "Spread",
+            "Add"
+        ]
+    },
+    {
+        "name": "Fish Taco",
+        "ingredients": [
+            { "name": "Whitefish", "amount": 1, "measurement": "lb" },
+            { "name": "Cheese", "amount": 1, "measurement": "cup" }
+        ],
+        "steps" : [
+            "Preheat",
+            "Add",
+            "Add2"
+        ]
+    }
+]
