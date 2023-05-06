@@ -1,8 +1,10 @@
 import React from "react";
 import { render } from "react-dom";
 import App from "./App";
-import colorData from "./data/color-data.json";
+import ColorProvider from "./hooks/color-hooks";
 
 render(
-    <App colorData={colorData} />,
+    <ColorProvider>
+        <App />
+    </ColorProvider>,
     document.getElementById("root"));
