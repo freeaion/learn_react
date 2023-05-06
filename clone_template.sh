@@ -1,3 +1,7 @@
 #!/usr/bin/env bash
 
-cp -fr template "${1:-}"
+prj="${1:-}"
+
+cp -fr template "${prj}"
+mkdir -p "${prj}"/dist
+mv "${prj}"/index.html "${prj}"/dist
