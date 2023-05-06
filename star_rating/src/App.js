@@ -1,19 +1,28 @@
 import React, { useState } from "react";
-//import colorData from "./data/color-data.json";
 import ColorList from "./components/ColorList";
+import AddColorForm from "./components/AddColorForm";
+import { v4 } from "uuid";
 
 export default function App({
-    myObj = { obj1: 0, obj2: "" }, colorData = []
+    colorData = []
 }) {
     const [colors, setColors] = useState(colorData);
-    myObj.obj1 += 2;
-    myObj.obj2 += "oo";
-
-    console.log(`myObj is evaluated: ${myObj.obj1}`);
-    console.log(`myObj is evaluated: ${myObj.obj2}`);
-    console.log(`myObj is evaluated: ${{ ...myObj }}`);
     return (
         <>
+            <AddColorForm
+                onNewColor={(title, color) => {
+                    const newColors = [
+                        ...colors,
+                        {
+                            id: v4(),
+                            rating: 0,
+                            title,
+                            color
+                        }
+                    ];
+                    setColors(newColors);
+                }}
+            />
             <ColorList
                 colors={colors}
                 onRemoveColor={id => {
@@ -25,9 +34,7 @@ export default function App({
                         color.id === id ? { ...color, rating } : color);
                     setColors(newColors);
                 }}
-                {...myObj}
             />
-            <p> my Obj value is {myObj.obj1}</p>
         </>
     );
 }
