@@ -39,11 +39,33 @@ function GitHubUser({ login }) {
     );
 }
 
+const tahoe_peaks = [
+    { name: "Freel Peak", elevation: 10891 },
+    { name: "Monument Peak", elevation: 10051 },
+    { name: "Pyramid Peak", elevation: 891 }
+];
+
+function List({ data = [], renderItem, renderEmpty }) {
+    if (!data.length) return renderEmpty;
+    return (
+        <ul>
+            {data.map((item, i) => (
+                <li key={i}>{renderItem(item)}</li>
+            ))}
+        </ul>
+    );
+}
+
 export default function App() {
     return (
-        <>
-            <GitHubUser login="MoonHighway" />
-            <GitHubUser login="freeaion" />
-        </>
+        <List
+            data={tahoe_peaks}
+            renderEmpty={<p>This list is empty</p>}
+            renderItem={item => (
+                <>
+                    {item.name} - {item.elevation.toLocaleString()}ft
+                </>
+            )}
+        />
     );
 }
