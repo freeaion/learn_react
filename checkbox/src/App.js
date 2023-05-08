@@ -1,11 +1,16 @@
 import React, { useCallback, useMemo, useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { FixedSizeList } from "react-window";
 
 const useIterator = (
     items = [],
     initIndex = 0
 ) => {
-    const [i, setIndex] = useState(initIndex);
+    const [i, setIndex] = useState(initIndex >= 0 ? initIndex : 0);
+
+    if (items.length === 0) {
+        return [{}, () => { }, () => { }];
+    }
 
     const prev = useCallback(() => {
         setIndex(i === 0 ? items.length - 1 : i - 1);
@@ -20,10 +25,12 @@ const useIterator = (
 
 function RepoMenu({
     repositories,
+    selected,
     onSelect = f => f
 }) {
     const [{ name }, prev, next] = useIterator(
-        repositories
+        repositories,
+        selected ? repositories.findIndex(repo => repo.name === selected) : 0
     );
 
     useEffect(() => {
@@ -49,10 +56,20 @@ function useFetch(uri) {
         if (!uri) return;
         setLoading(true);
         fetch(uri)
-            .then(data => data.json())
-            .then(setData)
+            .then(data => {
+                if (data.status === 404) {
+                    setLoading(false);
+                    throw new Error('404 error. maybe wrong url');
+                }
+                return data.json();
+            })
+            .then(json => {
+                setData(json);
+            })
             .then(() => setLoading(false))
-            .catch(setError);
+            .catch(error => {
+                return setError(error);
+            });
     }, [uri]);
 
     return { loading, data, error };
@@ -63,7 +80,7 @@ function Fetch({
     renderSuccess,
     loadingFallback = <p> loading...</p>,
     renderError = error => (
-        <pre>{JSON.stringify(error, null, 2)}</pre>
+        <pre>Error:{error.message} {JSON.stringify(error, null, 2)}</pre>
     )
 }) {
     const { loading, data, error } = useFetch(uri);
@@ -76,6 +93,7 @@ function Fetch({
 
 function UserRepositories({
     login,
+    repo,
     onSelect = f => f
 }) {
     return (
@@ -84,6 +102,7 @@ function UserRepositories({
             renderSuccess={({ data }) => (
                 <RepoMenu
                     repositories={data}
+                    selected={repo}
                     onSelect={onSelect}
                 />
             )}
@@ -104,11 +123,6 @@ function UserDetails({ data }) {
                 {data.name && <p>{data.name}</p>}
                 {data.location && <p>{data.location}</p>}
             </div>
-            <UserRepositories
-                login={data.login}
-                onSelect={
-                    repoName => console.log(`${repoName}!!`)}
-            />
         </div>
     );
 }
@@ -122,10 +136,57 @@ function GitHubUser({ login }) {
     );
 }
 
-export default function App() {
-    const [login, setLogin] = useState("moontahoe");
+function RepositoryReadme({ repo, login }) {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState();
+    const [markdown, setMarkdown] = useState("");
 
-    return <GitHubUser login={login} />;
+    const loadReadme = useCallback(async (login, repo) => {
+        setLoading(true);
+        const uri = `https://api.github.com/repos/${login}/${repo}/readme`;
+        const { download_url } = await fetch(uri).then(res =>
+            res.json()
+        );
+        const markdown = await fetch(download_url).then(res =>
+            res.text()
+        );
+        setMarkdown(markdown);
+        setLoading(false);
+    }, []);
+
+    useEffect(() => {
+        if (!repo || !login) return;
+        loadReadme(login, repo).catch(setError);
+    }, [repo]);
+
+    if (error)
+        return <pre>{JSON.stringify(error, null, 2)}</pre>;
+    if (loading) {
+        return <p>Loading...</p>;
+    }
+
+    return <ReactMarkdown children={markdown} />;
+}
+
+export default function App() {
+    const [login, setLogin] = useState("moonhighway");
+    const [repo, setRepo] = useState();
+
+    return (
+        <>
+            <GitHubUser login={login} />
+            <UserRepositories
+                login={login}
+                repo={repo}
+                onSelect={
+                    repoName => {
+                        setRepo(repoName);
+                    }
+                }
+            />
+            {repo && <RepositoryReadme repo={repo} login={login} />}
+        </>
+    );
 }
 
 // const tahoe_peaks = [
