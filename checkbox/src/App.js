@@ -1,6 +1,18 @@
-import React, { useCallback, useMemo, useEffect, useState } from "react";
+import React, {
+    useCallback, useRef, useMemo, useEffect, useState
+} from "react";
 import ReactMarkdown from "react-markdown";
-import { FixedSizeList } from "react-window";
+
+function useMountedRef() {
+    const mounted = useRef(false);
+
+    useEffect(() => {
+        mounted.current = true;
+        return () => (mounted.current = false);
+    });
+
+    return mounted;
+}
 
 const useIterator = (
     items = [],
@@ -50,13 +62,18 @@ function RepoMenu({
 function useFetch(uri) {
     const [data, setData] = useState();
     const [error, setError] = useState();
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+
+    const mounted = useMountedRef();
 
     useEffect(() => {
         if (!uri) return;
         setLoading(true);
         fetch(uri)
             .then(data => {
+                if (!mounted.current) {
+                    throw new Error("component is not mounted");
+                }
                 if (data.status === 404) {
                     setLoading(false);
                     throw new Error('404 error. maybe wrong url');
@@ -68,7 +85,8 @@ function useFetch(uri) {
             })
             .then(() => setLoading(false))
             .catch(error => {
-                return setError(error);
+                if (!mounted.current) return;
+                setError(error);
             });
     }, [uri]);
 
@@ -141,15 +159,21 @@ function RepositoryReadme({ repo, login }) {
     const [error, setError] = useState();
     const [markdown, setMarkdown] = useState("");
 
+    const mounted = useMountedRef();
+
     const loadReadme = useCallback(async (login, repo) => {
         setLoading(true);
         const uri = `https://api.github.com/repos/${login}/${repo}/readme`;
         const { download_url } = await fetch(uri).then(res =>
             res.json()
         );
+
+        if (!mounted.current) return;
         const markdown = await fetch(download_url).then(res =>
             res.text()
         );
+
+        if (!mounted.current) return;
         setMarkdown(markdown);
         setLoading(false);
     }, []);
